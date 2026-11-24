@@ -23,7 +23,6 @@ from witness_client import ExchangePending, RenderOptions, RenderRejected, Rende
 from . import patch, prompts
 from .budget import CREDIT_LIMIT, PRICING, SAFETY, Budget, worst_case
 from .fallback import fallback_module
-from .texfix import texfix
 from .images import data_url, object_closeup, png_data_url, to_jpeg, view_sheet, zoomed_views
 from .orient import Renderer
 
@@ -951,7 +950,7 @@ class Pipeline:
                         outcome.parent = winner.parent
                         winner = outcome
             self.best_so_far = winner.source
-            return self.texfixed(self.fitted_last(winner, plan))
+            return self.fitted_last(winner, plan)
 
     def run_steps(self, pool: ThreadPoolExecutor, survivors: list[Candidate], routed: list[Step], steps: list[Step],
                   start: int, stop: int) -> list[Candidate]:
@@ -965,18 +964,6 @@ class Pipeline:
             survivors = self.advance(pool, survivors, step, index)
             self.best_so_far = survivors[0].source
         return survivors
-
-    def texfixed(self, source: str) -> str:
-        """The finished module with smooth sampling on unfiltered data textures (texfix.py); as it is when nothing changes
-        or the renderer refuses it (one render of the judge's front views, no model calls)."""
-        candidate = texfix(source)
-        if candidate == source:
-            return source
-        try:
-            self.renderer.render(candidate, FRONT_JUDGE)
-        except RenderRejected:
-            return source
-        return candidate
 
     def fitted_last(self, winner: Candidate, plan: StagePlan) -> str:
         if not winner.raw:
